@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.4
 # -*- coding: utf-8 -*-
 import random
+import pickle
 
 HANGMANPICS = ['''
 
@@ -60,6 +61,26 @@ HANGMANPICS = ['''
       |
 =========''']
 words = 'ant baboon badger bat bear beaver camel cat clam cobra cougar coyote crow deer dog donkey duck eagle ferret fox frog goat goose hawk lion lizard llama mole monkey moose mouse mule newt otter owl panda parrot pigeon python rabbit ram rat raven rhino salmon seal shark sheep skunk sloth snake spider stork swan tiger toad trout turkey turtle weasel whale wolf wombat zebra'.split()
+
+def saveTopScore(topScore):
+    # This function saves the highest score to a pickle file.
+    try:
+        with open('topScore.pickle', 'wb') as f:
+            pickle.dump(topScore, f)
+    except Exception as e:
+        print('Error occurred while saving dictionary as pickle file:', e)
+
+def loadTopScore():
+    # This function loads the highest score from a pickle file.
+    try:
+        with open('topScore.pickle', 'rb') as f:
+            topScore = pickle.load(f)
+    except FileNotFoundError:
+        topScore = 0
+        saveTopScore(topScore)
+    except Exception as e:
+        print('Error occurred while loading data from pickle file:', e)
+    return topScore
 
 def getRandomWord(wordList):
     # This function returns a random string from the passed list of strings.
@@ -124,8 +145,12 @@ def checkWrongAnswer(missedLetters, secretWord):
 def main():
     """Main application entry point."""
     print('H A N G M A N by ...')
+    # Load TopScore
+    topScore = loadTopScore()
+    print(f"|============ Top score : {topScore} ============|")
     missedLetters = ''
     correctLetters = ''
+    score = 0
     gameSucceeded = False
     gameFailed = False
     secretWord = getRandomWord(words)
@@ -139,12 +164,21 @@ def main():
             else:
                 print('You have run out of guesses!\nAfter ' + str(len(missedLetters)) + ' missed guesses and ' + str(len(correctLetters)) + ' correct guesses, the word was "' + secretWord + '"')
 
+            # Check if it is the highest score
+            if score >= topScore : 
+                print('!~!~ Congratulations ~!~! You have reached the highest score.')
+                saveTopScore(score)
+            print(f"====>Your score is {score}.")
+
             # Ask the player if they want to play again (but only if the game is done).
             if playAgain():
                 missedLetters = ''
                 correctLetters = ''
                 gameSucceeded = False
                 gameFailed = False
+                score = 0
+                topScore = loadTopScore()
+                print(f"|============ Top score : {topScore} ============|")
                 secretWord = getRandomWord(words)
                 continue 
             else: 
@@ -153,6 +187,7 @@ def main():
         # Let the player type in a letter.
         guess = getGuess(missedLetters + correctLetters)
         if guess in secretWord:
+            score += 100
             correctLetters = correctLetters + guess
             gameSucceeded = checkCorrectAnswer(correctLetters, secretWord)
         else:
